@@ -34,9 +34,38 @@ app.post("/register", async (req, res) => {
       message: "User registered successfully",
       user: { id: newUser.id, email: newUser.email, name: newUser.name },
     });
-    
+
   } catch (error) {
     console.error("Registration error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    res.json({
+      message: "Login successful",
+      user: { id: user.id, email: user.email, name: user.name },
+    });
+    
+  } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
