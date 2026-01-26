@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcryptjs"); 
 const prisma = require("./lib/prisma");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,11 +60,18 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    const token = jwt.sign(
+      { userId: user.id, email: user.email }, 
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" },
+    );
+
     res.json({
       message: "Login successful",
+      token,
       user: { id: user.id, email: user.email, name: user.name },
     });
-    
+
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });
