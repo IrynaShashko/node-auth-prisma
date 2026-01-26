@@ -9,6 +9,23 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Access denied. No token provided." });
+  }
+
+  try {
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = verified;
+    next();
+  } catch (error) {
+    res.status(403).json({ error: "Invalid or expired token." });
+  }
+};
+
 app.post("/register", async (req, res) => {
   const { email, password, name } = req.body;
 
@@ -75,6 +92,19 @@ app.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/profile", authenticateToken, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { id: true, email: true, name: true, createdAt: true }
+    });
+    
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch profile." });
   }
 });
 
