@@ -71,4 +71,36 @@ router.get("/health", (req, res) => {
   res.json({ status: "ok", message: "Server is running" });
 });
 
+// Change Password
+router.post("/change-password", authenticateToken, async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+    });
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Old password is incorrect" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Logout Route
+router.post("/logout", (req, res) => {
+  res.json({ message: "Logged out successfully. Please delete your token." });
+});
+
 module.exports = router;
