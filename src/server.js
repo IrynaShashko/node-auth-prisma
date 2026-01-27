@@ -11,8 +11,25 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+const swaggerOptions = {
+  swaggerOptions: {
+    url: "/api-docs/swagger.json",
+  },
+  customCssUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css",
+  customJs: [
+    "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.js",
+  ],
+};
 
+app.get("/api-docs/swagger.json", (req, res) => res.json(swaggerSpecs));
+
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(null, swaggerOptions),
+);
 app.use("/api/auth", authRoutes);
 
 app.get("/api/profile", authenticateToken, async (req, res) => {
@@ -23,7 +40,9 @@ app.get("/api/profile", authenticateToken, async (req, res) => {
   res.json(user);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`API Documentation available at /api-docs`);
 });
+
+module.exports = app;

@@ -116,7 +116,9 @@ router.post("/forgot-password", async (req, res) => {
       data: { resetToken: token, resetTokenExpiry: expiry },
     });
 
-    const resetUrl = `http://localhost:3000/api/auth/reset-password/${token}`;
+    const protocol = req.headers["x-forwarded-proto"] || "http";
+    const host = req.get("host");
+    const resetUrl = `${protocol}://${host}/api/auth/reset-password/${token}`;
 
     await transporter.sendMail({
       from: process.env.EMAIL_FROM,

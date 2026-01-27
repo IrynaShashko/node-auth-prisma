@@ -10,8 +10,8 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:3000",
-        description: "Local server",
+        url: "/",
+        description: "Current Server",
       },
     ],
     components: {
@@ -232,8 +232,7 @@ const options = {
       },
     },
   },
-
-  apis: [],
+  apis: ["./src/server.js", "./src/routes/*.js"],
 };
 
 const specs = swaggerJsdoc(options);
