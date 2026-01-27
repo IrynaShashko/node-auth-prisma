@@ -109,7 +109,7 @@ router.post("/forgot-password", async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const token = crypto.randomBytes(32).toString("hex");
-    const expiry = new Date(Date.now() + 3600000); 
+    const expiry = new Date(Date.now() + 3600000);
 
     await prisma.user.update({
       where: { email },
@@ -119,7 +119,7 @@ router.post("/forgot-password", async (req, res) => {
     const resetUrl = `http://localhost:3000/api/auth/reset-password/${token}`;
 
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM, 
+      from: process.env.EMAIL_FROM,
       to: user.email,
       subject: "Скидання пароля",
       html: `
