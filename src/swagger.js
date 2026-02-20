@@ -112,6 +112,34 @@ const options = {
           },
         },
       },
+      "/api/book-service": {
+        post: {
+          tags: ["Book Service"],
+          summary: "Book a service",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["name", "email", "phone", "service", "date"],
+                  properties: {
+                    name: { type: "string", example: "Kate" },
+                    email: { type: "string", example: "kate@example.com" },
+                    phone: { type: "string", example: "+380123456789" },
+                    service: { type: "string", example: "Послуга 1" },
+                    date: { type: "string", example: "2024-01-01T12:00:00Z" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            201: { description: "Service booked successfully" },
+            400: { description: "Invalid request data" },
+          },
+        },
+      },
       "/api/auth/change-password": {
         post: {
           tags: ["Profile Management"],
@@ -140,7 +168,7 @@ const options = {
       },
       "/api/auth/forgot-password": {
         post: {
-          tags: ["Password Recovery"],
+          tags: ["Profile Management"],
           summary: "Request password reset link",
           requestBody: {
             required: true,
@@ -164,7 +192,7 @@ const options = {
       },
       "/api/auth/reset-password/{token}": {
         post: {
-          tags: ["Password Recovery"],
+          tags: ["Profile Management"],
           summary: "Reset password using token",
           parameters: [
             {

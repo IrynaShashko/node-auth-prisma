@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const authRoutes = require("./routes/auth");
+const bookServiceRoutes = require("./routes/bookServices");
 const authenticateToken = require("./middleware/auth");
 const prisma = require("./lib/prisma");
 const swaggerUi = require("swagger-ui-express");
@@ -31,6 +32,8 @@ app.use(
   swaggerUi.setup(null, swaggerOptions),
 );
 app.use("/api/auth", authRoutes);
+
+app.use("/api", bookServiceRoutes);
 
 app.get("/api/profile", authenticateToken, async (req, res) => {
   const user = await prisma.user.findUnique({
