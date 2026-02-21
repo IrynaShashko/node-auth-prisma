@@ -1,4 +1,4 @@
-const swaggerJsdoc = require("swagger-jsdoc");
+import swaggerJsdoc from "swagger-jsdoc";
 
 const options = {
   definition: {
@@ -45,8 +45,71 @@ const options = {
             },
           },
           responses: {
-            201: { description: "User registered successfully" },
-            400: { description: "User already exists" },
+            201: {
+              description: "Registration successful! Verification email sent.",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      status: { type: "string", example: "success" },
+                      data: {
+                        type: "object",
+                        properties: {
+                          user: {
+                            type: "object",
+                            properties: {
+                              id: { type: "integer", example: 1 },
+                              name: { type: "string", example: "Jane Doe" },
+                              email: {
+                                type: "string",
+                                example: "jane@example.com",
+                              },
+                              isVerified: { type: "boolean", example: false },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            400: {
+              description: "User already exists or invalid data",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      error: {
+                        type: "string",
+                        example: "User already exist with this email",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/auth/verify-email/{token}": {
+        get: {
+          tags: ["Authentication"],
+          summary: "Verify user email",
+          parameters: [
+            {
+              name: "token",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+              description: "The verification token sent to user's email",
+            },
+          ],
+          responses: {
+            200: { description: "Email verified successfully" },
+            400: { description: "Invalid or expired token" },
           },
         },
       },
@@ -72,6 +135,22 @@ const options = {
           responses: {
             200: { description: "Login successful, returns JWT token" },
             401: { description: "Invalid credentials" },
+            403: {
+              description: "Email not verified",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      error: {
+                        type: "string",
+                        example: "Please verify your email first.",
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -112,23 +191,186 @@ const options = {
           },
         },
       },
-      "/api/book-service": {
+      "/api/reviews": {
         post: {
-          tags: ["Book Service"],
-          summary: "Book a service",
+          tags: ["Reviews"],
+          summary: "Create a new review (Authorized only)",
+          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             content: {
               "application/json": {
                 schema: {
                   type: "object",
-                  required: ["name", "email", "phone", "service", "date"],
+                  required: ["rating", "comment", "userId"],
+                  properties: {
+                    rating: {
+                      type: "integer",
+                      minimum: 1,
+                      maximum: 5,
+                      example: 5,
+                    },
+                    comment: {
+                      type: "string",
+                      example: "Great service, highly recommend!",
+                    },
+                    userId: {
+                      type: "string",
+                      example: "cm5abc123xyz",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            201: {
+              description: "Review created successfully",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      status: {
+                        type: "string",
+                        example: "success",
+                      },
+                      data: {
+                        type: "object",
+                        properties: {
+                          review: {
+                            type: "object",
+                            properties: {
+                              id: {
+                                type: "string",
+                                example: "cm5review123",
+                              },
+                              rating: {
+                                type: "integer",
+                                example: 5,
+                              },
+                              comment: {
+                                type: "string",
+                                example: "Great service",
+                              },
+                              userId: {
+                                type: "string",
+                                example: "cm5abc123xyz",
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            400: {
+              description: "Invalid request data",
+            },
+            401: {
+              description: "Unauthorized",
+            },
+            500: {
+              description: "Internal server error",
+            },
+          },
+        },
+
+        get: {
+          tags: ["Reviews"],
+          summary: "Get all reviews",
+          responses: {
+            200: {
+              description: "List of all reviews",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      status: {
+                        type: "string",
+                        example: "success",
+                      },
+                      results: {
+                        type: "integer",
+                        example: 2,
+                      },
+                      data: {
+                        type: "object",
+                        properties: {
+                          reviews: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                id: {
+                                  type: "string",
+                                  example: "cm5review123",
+                                },
+                                rating: {
+                                  type: "integer",
+                                  example: 5,
+                                },
+                                comment: {
+                                  type: "string",
+                                  example: "Amazing experience!",
+                                },
+                                createdAt: {
+                                  type: "string",
+                                  format: "date-time",
+                                },
+                                user: {
+                                  type: "object",
+                                  properties: {
+                                    name: {
+                                      type: "string",
+                                      example: "Jane Doe",
+                                    },
+                                    email: {
+                                      type: "string",
+                                      example: "jane@example.com",
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            500: {
+              description: "Internal server error",
+            },
+          },
+        },
+      },
+      "/api/book-service": {
+        post: {
+          tags: ["Book Service"],
+          summary: "Book a service (Authorized only)",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["name", "email", "phone", "service", "comment"],
                   properties: {
                     name: { type: "string", example: "Kate" },
                     email: { type: "string", example: "kate@example.com" },
                     phone: { type: "string", example: "+380123456789" },
                     service: { type: "string", example: "Послуга 1" },
-                    date: { type: "string", example: "2024-01-01T12:00:00Z" },
+                    comment: {
+                      type: "string",
+                      example: "Коментар до бронювання",
+                    },
                   },
                 },
               },
@@ -264,4 +506,4 @@ const options = {
 };
 
 const specs = swaggerJsdoc(options);
-module.exports = specs;
+export default specs;

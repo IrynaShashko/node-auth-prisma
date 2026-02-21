@@ -1,11 +1,15 @@
-require("dotenv").config();
-const express = require("express");
-const authRoutes = require("./routes/auth");
-const bookServiceRoutes = require("./routes/bookServices");
-const authenticateToken = require("./middleware/auth");
-const prisma = require("./lib/prisma");
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpecs = require("./swagger");
+import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
+// ОБОВ'ЯЗКОВО додаємо .js до локальних файлів
+import authRoutes from "./routes/authRoutes.js";
+import bookRoutes from "./routes/bookRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import authenticateToken from "./middleware/auth.js";
+import prisma from "./lib/prisma.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpecs from "./swagger.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,14 +30,13 @@ const swaggerOptions = {
 
 app.get("/api-docs/swagger.json", (req, res) => res.json(swaggerSpecs));
 
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(null, swaggerOptions),
-);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(null, swaggerOptions));
+
 app.use("/api/auth", authRoutes);
 
-app.use("/api", bookServiceRoutes);
+app.use("/api", bookRoutes);
+
+app.use("/api/reviews", reviewRoutes);
 
 app.get("/api/profile", authenticateToken, async (req, res) => {
   const user = await prisma.user.findUnique({
@@ -48,4 +51,4 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`API Documentation available at /api-docs`);
 });
 
-module.exports = app;
+export default app;

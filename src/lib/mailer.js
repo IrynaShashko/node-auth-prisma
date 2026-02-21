@@ -1,12 +1,22 @@
-const sgMail = require("@sendgrid/mail");
+import sgMail from "@sendgrid/mail";
+import dotenv from "dotenv";
 
-require("dotenv").config();
-
-const senderEmail = process.env.EMAIL_FROM;
+dotenv.config();
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-const emailBody = (name, service, comment, phone) => {
+const emailVerificationBody = (verifyUrl) => {
+  return `
+    <div style="font-family: Arial; text-align: center;">
+      <h1>Підтвердження реєстрації</h1>
+      <p>Дякуємо за реєстрацію! Будь ласка, натисніть на кнопку нижче, щоб активувати ваш аккаунт:</p>
+      <a href="${verifyUrl}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Підтвердити пошту</a>
+      <p>Це посилання дійсне протягом 24 годин.</p>
+    </div>
+  `;
+};
+
+const emailBookNowBody = (name, service, comment, phone) => {
   const cleanPhone = phone.replace(/\D/g, "");
 
   return `
@@ -27,22 +37,25 @@ const emailBody = (name, service, comment, phone) => {
       `;
 };
 
-const sendEmail = async ({ email, name, service, comment, phone }) => {
-  const emailData = {
-    to: email,
-    from: senderEmail,
-    replyTo: "irishkashashko@gmail.com",
-    subject: `📅 New Booking: ${service} - ${name}`,
-    html: emailBody(name, service, comment, phone),
-  };
-  return sgMail
-    .send(emailData)
-    .then(() => {
-      console.log("Email sent successfully!");
-    })
-    .catch((error) => {
-      console.error("Error sending email:", error);
-    });
+const emailContactBody = (resetUrl) => {
+  return `
+        <h1>Вітаємо!</h1>
+        <p>Ви отримали цей лист, бо зробили запит на зміну пароля.</p>
+        <a href="${resetUrl}">Натисніть тут, щоб змінити пароль</a>
+        <p>Це посилання дійсне 1 годину.</p>
+      `;
 };
 
-module.exports = sendEmail;
+const sendEmail = async ({ email, subject, html }) => {
+  const emailData = {
+    to: email,
+    from: process.env.EMAIL_FROM,
+    replyTo: process.env.EMAIL_FROM,
+    subject: subject,
+    html: html,
+  };
+
+  return sgMail.send(emailData);
+};
+
+export { emailVerificationBody, emailBookNowBody, emailContactBody, sendEmail };

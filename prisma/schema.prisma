@@ -14,12 +14,25 @@ generator client {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
-  password String
-  name     String?
-  resetToken           String?   @unique
-  resetTokenExpiry     DateTime?
+  id               String    @id @default(uuid())
+  email            String    @unique
+  password         String
+  name             String?
+  isVerified        Boolean   @default(false) 
+  verificationToken String?   @unique
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+  reviews          Review[]
+}
+
+model Review {
+  id      String @id @default(uuid())
+  rating  Int
+  comment String
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
-  @@map("users")
 }
