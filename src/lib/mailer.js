@@ -16,7 +16,7 @@ const emailVerificationBody = (verifyUrl) => {
   `;
 };
 
-const emailBookNowBody = (name, service, comment, phone) => {
+const emailBookNowBody = (name, service, comment, phone, email) => {
   const cleanPhone = phone.replace(/\D/g, "");
 
   return `
@@ -27,11 +27,12 @@ const emailBookNowBody = (name, service, comment, phone) => {
           
           <div style="padding: 20px; background-color: #ffffff;">
             <p style="margin: 10px 0;"><strong>Клієнт:</strong> ${name}</p>
-            <p style="margin: 10px 0;"><strong>Послуга:</strong> ${service}</p>
-            <p style="margin: 10px 0;"><strong>Коментар:</strong> ${comment}</p>
+            <p style="margin: 10px 0;"><strong>Пошта:</strong> ${email}</p>
             <p style="margin: 10px 0;"><strong>Телефон:</strong> 
               <a href="tel:${cleanPhone}" style="color: #007586; text-decoration: none; font-weight: bold;">${cleanPhone}</a>
             </p>
+            <p style="margin: 10px 0;"><strong>Послуга:</strong> ${service}</p>
+            <p style="margin: 10px 0;"><strong>Коментар:</strong> ${comment}</p>
           </div>
         </div>
       `;

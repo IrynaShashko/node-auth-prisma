@@ -16,14 +16,90 @@ const options = {
     ],
     components: {
       securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
+        cookieAuth: {
+          type: "apiKey",
+          in: "cookie",
+          name: "jwt",
         },
       },
     },
     paths: {
+      "/api/auth/google": {
+        post: {
+          tags: ["Authentication"],
+          summary: "Google Authentication",
+          description:
+            "Authenticates user via Google ID Token. Creates a new account if it doesn't exist.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["idToken"],
+                  properties: {
+                    idToken: {
+                      type: "string",
+                      example: "eyJhbGciOiJSUzI1NiIsImtpZCI6...",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: "Successfully authenticated",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      status: { type: "string", example: "success" },
+                      data: {
+                        type: "object",
+                        properties: {
+                          user: {
+                            type: "object",
+                            properties: {
+                              id: { type: "integer", example: 1 },
+                              email: {
+                                type: "string",
+                                example: "jane@gmail.com",
+                              },
+                              name: { type: "string", example: "Jane Doe" },
+                            },
+                          },
+                          token: {
+                            type: "string",
+                            example: "eyJhbGciOiJIUzI1...",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            400: {
+              description: "Invalid Google token or unverified account",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      error: {
+                        type: "string",
+                        example: "Invalid Google token",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       "/api/auth/register": {
         post: {
           tags: ["Authentication"],
@@ -160,11 +236,7 @@ const options = {
           summary: "Get current user profile",
           description:
             "Returns user data for the currently authenticated user.",
-          security: [
-            {
-              bearerAuth: [],
-            },
-          ],
+          security: [{ cookieAuth: [] }],
           responses: {
             200: {
               description: "User profile data retrieved successfully",
@@ -191,11 +263,82 @@ const options = {
           },
         },
       },
+      "/api/profile": {
+        put: {
+          tags: ["User"],
+          summary: "Update user profile (Authorized only)",
+          description:
+            "Updates the name of the user. Requires a JWT token stored in cookies.",
+          security: [{ cookieAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string", example: "Jane New Name" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: "Profile updated successfully",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      id: { type: "integer", example: 1 },
+                      email: { type: "string", example: "jane@example.com" },
+                      name: { type: "string", example: "Jane New Name" },
+                    },
+                  },
+                },
+              },
+            },
+            401: {
+              description: "Access denied. No token provided.",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      error: {
+                        type: "string",
+                        example: "Access denied. No token provided.",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            403: {
+              description: "Invalid or expired token.",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      error: {
+                        type: "string",
+                        example: "Invalid or expired token.",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       "/api/reviews": {
         post: {
           tags: ["Reviews"],
           summary: "Create a new review (Authorized only)",
-          security: [{ bearerAuth: [] }],
+          security: [{ cookieAuth: [] }],
           requestBody: {
             required: true,
             content: {
@@ -354,7 +497,7 @@ const options = {
         post: {
           tags: ["Book Service"],
           summary: "Book a service (Authorized only)",
-          security: [{ bearerAuth: [] }],
+          security: [{ cookieAuth: [] }],
           requestBody: {
             required: true,
             content: {
@@ -386,7 +529,7 @@ const options = {
         post: {
           tags: ["Profile Management"],
           summary: "Change password (Authorized only)",
-          security: [{ bearerAuth: [] }],
+          security: [{ cookieAuth: [] }],
           requestBody: {
             required: true,
             content: {

@@ -2,7 +2,7 @@ import express from "express";
 
 const router = express.Router();
 
-import authenticateToken from "../middleware/auth.js";
+import authenticateToken from "../middleware/authenticateToken.js";
 
 import { createBooking } from "../controllers/bookController.js";
 

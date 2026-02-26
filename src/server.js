@@ -1,19 +1,33 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import express from "express";
-// ОБОВ'ЯЗКОВО додаємо .js до локальних файлів
+import swaggerUi from "swagger-ui-express";
+
+import prisma from "./lib/prisma.js";
+import authenticateToken from "./middleware/authenticateToken.js";
+
 import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
-import authenticateToken from "./middleware/auth.js";
-import prisma from "./lib/prisma.js";
-import swaggerUi from "swagger-ui-express";
+
 import swaggerSpecs from "./swagger.js";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
+app.use(
+  cors({
+    origin: "https://massage-maria-glushenko.netlify.app",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+
+app.use(cookieParser());
 app.use(express.json());
 
 const swaggerOptions = {

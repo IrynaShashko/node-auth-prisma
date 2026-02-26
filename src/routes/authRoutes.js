@@ -1,35 +1,43 @@
 import express from "express";
-import authenticateToken from "../middleware/auth.js";
 import {
   loginSchema,
   registerSchema,
   validate,
 } from "../middleware/validators.js";
-const router = express.Router();
+
+import authenticateToken from "../middleware/authenticateToken.js";
 
 import {
-  register,
-  login,
-  profile,
-  healthCheck,
   changePassword,
   forgotPassword,
-  resetPassword,
+  googleLogin,
+  healthCheck,
+  login,
   logout,
+  profile,
+  register,
+  resetPassword,
+  updateProfile,
   verifyEmail,
 } from "../controllers/authController.js";
+
+const router = express.Router();
 
 // Register
 router.post("/register", validate(registerSchema), register);
 
 // Email Verification
-router.get("/verify-email/:token", verifyEmail)
+router.get("/verify-email/:token", verifyEmail);
 
 // Login
 router.post("/login", validate(loginSchema), login);
 
+// Google Login
+router.post("/google", googleLogin);
+
 //Profile
 router.get("/profile", authenticateToken, profile);
+router.put("/profile", authenticateToken, updateProfile);
 
 // Health Check
 router.get("/health", healthCheck);

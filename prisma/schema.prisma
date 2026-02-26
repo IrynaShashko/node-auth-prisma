@@ -16,8 +16,9 @@ generator client {
 model User {
   id               String    @id @default(uuid())
   email            String    @unique
-  password         String
+  password         String?
   name             String?
+  googleId  String?  @unique
   isVerified        Boolean   @default(false) 
   verificationToken String?   @unique
   resetToken       String?   @unique

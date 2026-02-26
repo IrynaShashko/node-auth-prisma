@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 
 import crypto from "crypto";
 
+import { OAuth2Client } from "google-auth-library";
+
 import {
   emailContactBody,
   emailVerificationBody,
@@ -72,30 +74,47 @@ const verifyEmail = async (req, res) => {
   const { token } = req.params;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { verificationToken: token },
+    const user = await prisma.user.findFirst({
+      where: {
+        verificationToken: token,
+      },
     });
 
-    if (!user) return res.status(400).send("Invalid or expired token.");
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification token",
+      });
+    }
+
+    if (user.isVerified) {
+      generateToken(user.id, res);
+
+      return res.json({
+        success: true,
+        message: "Email already verified",
+      });
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: { isVerified: true, verificationToken: null },
+      data: {
+        isVerified: true,
+        verificationToken: null,
+      },
     });
 
     generateToken(updatedUser.id, res);
 
-    res.send(`
-      <div style="text-align: center; font-family: sans-serif; padding-top: 50px;">
-        <h1 style="color: green;">✅ Пошту успішно підтверджено!</h1>
-        <p>Тепер ви автоматично залогінені в системі.</p>
-        <a href="${process.env.WEB_URL}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">
-          Перейти на головну сторінку
-        </a>
-      </div>
-    `);
+    return res.json({
+      success: true,
+      message: "Email verified successfully",
+    });
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -109,6 +128,12 @@ const login = async (req, res) => {
 
   if (!user) {
     return res.status(401).json({ error: "Invalid email or password" });
+  }
+
+  if (!user.password) {
+    return res.status(400).json({
+      error: `This account is registered via Google. Please use "Sign in with Google"`,
+    });
   }
 
   // Check if email is verified
@@ -138,11 +163,71 @@ const login = async (req, res) => {
   });
 };
 
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const googleLogin = async (req, res) => {
+  const { idToken } = req.body;
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const { email, name, sub: googleId, email_verified } = ticket.getPayload();
+
+    if (!email_verified) {
+      return res.status(400).json({ error: "Google account is not verified" });
+    }
+
+    let user = await prisma.user.findUnique({
+      where: { email: email },
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          googleId,
+          isVerified: true,
+        },
+      });
+    } else if (!user.googleId) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { googleId, isVerified: true },
+      });
+    }
+
+    const token = generateToken(user.id, res);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        },
+        token,
+      },
+    });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(400).json({ error: "Invalid Google token" });
+  }
+};
+
 const logout = async (req, res) => {
   res.cookie("jwt", "", {
     httpOnly: true,
+    secure: true,
+    sameSite: "none",
     expires: new Date(0),
+    path: "/",
   });
+
   res.status(200).json({
     status: "success",
     message: "Logged out successfully",
@@ -159,6 +244,23 @@ const profile = async (req, res) => {
     res.json(user);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch profile." });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  const { name } = req.body;
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { name },
+      select: { id: true, email: true, name: true },
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Failed to update profile." });
   }
 };
 
@@ -271,11 +373,13 @@ const resetPassword = async (req, res) => {
 export {
   changePassword,
   forgotPassword,
+  googleLogin,
   healthCheck,
   login,
   logout,
   profile,
   register,
   resetPassword,
+  updateProfile,
   verifyEmail,
 };

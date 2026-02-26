@@ -6,7 +6,7 @@ const createBooking = async (req, res) => {
     await sendEmail({
       email: process.env.EMAIL_TO,
       subject: `📅 Новий запис: ${data.service}`,
-      html: emailBookNowBody(data.name, data.service, data.comment, data.phone),
+      html: emailBookNowBody(data.name, data.service, data.comment, data.phone, data.email),
     });
     res.json({ message: "Booking request sent successfully!" });
   } catch (error) {
