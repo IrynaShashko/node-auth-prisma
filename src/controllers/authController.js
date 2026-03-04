@@ -163,18 +163,21 @@ const login = async (req, res) => {
   });
 };
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 const googleLogin = async (req, res) => {
-  const { idToken } = req.body;
+  const { idToken } = req.body; 
 
   try {
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    const userInfoResponse = await fetch(
+      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${idToken}`,
+    );
 
-    const { email, name, sub: googleId, email_verified } = ticket.getPayload();
+    if (!userInfoResponse.ok) {
+      throw new Error("Failed to fetch user info from Google");
+    }
+
+    const userData = await userInfoResponse.json();
+
+    const { email, name, sub: googleId, email_verified } = userData;
 
     if (!email_verified) {
       return res.status(400).json({ error: "Google account is not verified" });
@@ -205,11 +208,7 @@ const googleLogin = async (req, res) => {
     res.status(200).json({
       status: "success",
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
+        user: { id: user.id, email: user.email, name: user.name },
         token,
       },
     });
